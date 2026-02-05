@@ -11,7 +11,46 @@ const categoryIcons: Record<string, string> = {
   'ai-search': '🤖',
   'social-search': '📱',
   'performance': '⚡',
+  'ecommerce-collection': '🛍️',
+  'ecommerce-product': '📦',
+  'local-gbp': '📍',
+  'local-landing': '🏪',
+  'international': '🌍',
 };
+
+// Brand-specific categories for display
+const BRAND_SPECIFIC_CATEGORIES = [
+  {
+    id: 'ecommerce-collection',
+    name: 'Collection Pages',
+    description: 'Product carousels, filters, navigation, and collection page optimisation for ecommerce',
+    brandType: 'ecommerce',
+  },
+  {
+    id: 'ecommerce-product',
+    name: 'Product Pages',
+    description: 'Pricing, schema, stock availability, images, and product page best practices',
+    brandType: 'ecommerce',
+  },
+  {
+    id: 'local-gbp',
+    name: 'Google Business Profile',
+    description: 'GBP optimisation, reviews, photos, categories, and local presence management',
+    brandType: 'local',
+  },
+  {
+    id: 'local-landing',
+    name: 'Local Landing Pages',
+    description: 'NAP details, LocalBusiness schema, maps integration, and store information',
+    brandType: 'local',
+  },
+  {
+    id: 'international',
+    name: 'International SEO',
+    description: 'Hreflang implementation, multi-region content, language selectors, and geo-targeting',
+    brandType: 'international',
+  },
+];
 
 const brandTypes: { id: BrandType; name: string; icon: string }[] = [
   { id: 'general', name: 'General', icon: '🌐' },
@@ -81,7 +120,7 @@ export default function Home() {
               letterSpacing: '-0.02em',
             }}
           >
-            Search Everything Audit
+            Search <span className="animated-underline">Everything</span> Audit
           </h1>
 
           {/* Subheading */}
@@ -320,6 +359,7 @@ export default function Home() {
       {/* Categories Section */}
       {!showBrandSelection && (
         <section style={{ padding: '4rem 2rem', maxWidth: '1100px', margin: '0 auto' }}>
+          {/* Core Categories */}
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2
               style={{
@@ -364,6 +404,105 @@ export default function Home() {
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
+                <div
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--background-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  {categoryIcons[category.id] || '📊'}
+                </div>
+                <h3
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    marginBottom: '0.5rem',
+                  }}
+                >
+                  {category.name}
+                </h3>
+                <p
+                  style={{
+                    color: 'var(--muted)',
+                    fontSize: '0.9rem',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {category.description}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Brand-Specific Categories */}
+          <div style={{ textAlign: 'center', marginTop: '4rem', marginBottom: '3rem' }}>
+            <h2
+              style={{
+                fontSize: '1.75rem',
+                fontWeight: 700,
+                marginBottom: '0.75rem',
+              }}
+            >
+              Brand-Specific Analysis
+            </h2>
+            <p style={{ color: 'var(--muted)', maxWidth: '600px', margin: '0 auto' }}>
+              Additional checks tailored to your business type — ecommerce, local, or international
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1.25rem',
+            }}
+          >
+            {BRAND_SPECIFIC_CATEGORIES.map((category) => (
+              <div
+                key={category.id}
+                style={{
+                  padding: '1.75rem',
+                  backgroundColor: 'var(--card-bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'default',
+                  position: 'relative',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                  }}
+                >
+                  {category.brandType}
+                </span>
                 <div
                   style={{
                     width: '48px',
