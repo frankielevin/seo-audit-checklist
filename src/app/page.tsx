@@ -62,7 +62,7 @@ const brandTypes: { id: BrandType; name: string; icon: string }[] = [
 export default function Home() {
   const [url, setUrl] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [selectedBrandType, setSelectedBrandType] = useState<BrandType | null>(null);
+  const [selectedBrandTypes, setSelectedBrandTypes] = useState<Set<BrandType>>(new Set());
   const [showBrandSelection, setShowBrandSelection] = useState(false);
 
   const handleUrlSubmit = (e: React.FormEvent) => {
@@ -71,14 +71,27 @@ export default function Home() {
     setShowBrandSelection(true);
   };
 
+  const toggleBrandType = (brandType: BrandType) => {
+    setSelectedBrandTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(brandType)) {
+        next.delete(brandType);
+      } else {
+        next.add(brandType);
+      }
+      return next;
+    });
+  };
+
   const handleStartAudit = () => {
-    if (!url || !selectedBrandType) return;
-    window.location.href = `/audit?url=${encodeURIComponent(url)}&type=${selectedBrandType}`;
+    if (!url || selectedBrandTypes.size === 0) return;
+    const types = Array.from(selectedBrandTypes).join(',');
+    window.location.href = `/audit?url=${encodeURIComponent(url)}&type=${types}`;
   };
 
   const handleBack = () => {
     setShowBrandSelection(false);
-    setSelectedBrandType(null);
+    setSelectedBrandTypes(new Set());
   };
 
   return (
@@ -134,8 +147,8 @@ export default function Home() {
             }}
           >
             {showBrandSelection
-              ? 'Select your brand type for a tailored audit experience.'
-              : 'Analyse your website across 7 key categories and get actionable insights to improve your search visibility.'}
+              ? 'Select one or more brand types for a tailored audit experience.'
+              : 'Analyse your website across 12 key categories and get actionable insights to improve your search visibility.'}
           </p>
 
           {!showBrandSelection ? (
@@ -227,7 +240,7 @@ export default function Home() {
                   flexWrap: 'wrap',
                 }}
               >
-                {['65+ checks', '7 categories', 'Instant results'].map((item) => (
+                {['150+ checks', '12 categories', 'Instant results'].map((item) => (
                   <div
                     key={item}
                     style={{
@@ -289,61 +302,82 @@ export default function Home() {
                   margin: '0 auto 2rem',
                 }}
               >
-                {brandTypes.map((brand) => (
-                  <button
-                    key={brand.id}
-                    onClick={() => setSelectedBrandType(brand.id)}
-                    style={{
-                      padding: '1.25rem 1rem',
-                      backgroundColor: selectedBrandType === brand.id ? 'var(--primary-light)' : 'var(--card-bg)',
-                      border: `2px solid ${selectedBrandType === brand.id ? 'var(--primary)' : 'var(--border)'}`,
-                      borderRadius: 'var(--radius)',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedBrandType !== brand.id) {
-                        e.currentTarget.style.borderColor = 'var(--primary)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedBrandType !== brand.id) {
-                        e.currentTarget.style.borderColor = 'var(--border)';
-                      }
-                    }}
-                  >
-                    <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{brand.icon}</div>
-                    <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
-                      {brand.name}
-                    </div>
-                  </button>
-                ))}
+                {brandTypes.map((brand) => {
+                  const isSelected = selectedBrandTypes.has(brand.id);
+                  return (
+                    <button
+                      key={brand.id}
+                      onClick={() => toggleBrandType(brand.id)}
+                      style={{
+                        padding: '1.25rem 1rem',
+                        backgroundColor: isSelected ? 'var(--primary-light)' : 'var(--card-bg)',
+                        border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
+                        borderRadius: 'var(--radius)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = 'var(--primary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                        }
+                      }}
+                    >
+                      {isSelected && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '0.5rem',
+                          right: '0.5rem',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--primary)',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>✓</span>
+                      )}
+                      <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{brand.icon}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
+                        {brand.name}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Start Audit Button */}
               <button
                 onClick={handleStartAudit}
-                disabled={!selectedBrandType}
+                disabled={selectedBrandTypes.size === 0}
                 style={{
                   padding: '1rem 3rem',
                   fontSize: '1.1rem',
                   fontWeight: 600,
-                  backgroundColor: selectedBrandType ? 'var(--primary)' : 'var(--border)',
-                  color: selectedBrandType ? 'white' : 'var(--muted)',
+                  backgroundColor: selectedBrandTypes.size > 0 ? 'var(--primary)' : 'var(--border)',
+                  color: selectedBrandTypes.size > 0 ? 'white' : 'var(--muted)',
                   border: 'none',
                   borderRadius: 'var(--radius)',
-                  cursor: selectedBrandType ? 'pointer' : 'not-allowed',
+                  cursor: selectedBrandTypes.size > 0 ? 'pointer' : 'not-allowed',
                   transition: 'all 0.2s ease',
                 }}
                 onMouseEnter={(e) => {
-                  if (selectedBrandType) {
+                  if (selectedBrandTypes.size > 0) {
                     e.currentTarget.style.backgroundColor = 'var(--primary-hover)';
                     e.currentTarget.style.transform = 'translateY(-1px)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (selectedBrandType) {
+                  if (selectedBrandTypes.size > 0) {
                     e.currentTarget.style.backgroundColor = 'var(--primary)';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }
@@ -404,21 +438,9 @@ export default function Home() {
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                <div
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--background-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    marginBottom: '1rem',
-                  }}
-                >
+                <span style={{ fontSize: '1.75rem', display: 'block', marginBottom: '1rem' }}>
                   {categoryIcons[category.id] || '📊'}
-                </div>
+                </span>
                 <h3
                   style={{
                     fontSize: '1.1rem',
@@ -503,21 +525,9 @@ export default function Home() {
                 >
                   {category.brandType}
                 </span>
-                <div
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--background-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem',
-                    marginBottom: '1rem',
-                  }}
-                >
+                <span style={{ fontSize: '1.75rem', display: 'block', marginBottom: '1rem' }}>
                   {categoryIcons[category.id] || '📊'}
-                </div>
+                </span>
                 <h3
                   style={{
                     fontSize: '1.1rem',

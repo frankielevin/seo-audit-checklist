@@ -96,24 +96,24 @@ export const AUTHORITY_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
   },
   // High
   {
-    id: 'high-authority-backlinks',
-    name: 'High-Authority Backlinks',
-    description: 'Does the site have backlinks from at least 10 high-authority domains (DR 50+) in the past 12 months?',
-    importance: 'high',
-  },
-  {
-    id: 'referring-domains-growth',
-    name: 'Referring Domains Growth',
-    description: 'Does the site have a clear, consistent increase in referring domains over the last 12 months?',
-    importance: 'high',
-  },
-  {
     id: 'anchor-text-distribution',
     name: 'Anchor Text Distribution',
     description: 'Is the anchor text profile of the website natural and NOT exact-match heavy?',
     importance: 'high',
   },
   // Medium
+  {
+    id: 'high-authority-backlinks',
+    name: 'High-Authority Backlinks',
+    description: 'Does the site have backlinks from at least 10 high-authority domains (DR 50+) in the past 12 months?',
+    importance: 'medium',
+  },
+  {
+    id: 'referring-domains-growth',
+    name: 'Referring Domains Growth',
+    description: 'Does the site have a clear, consistent increase in referring domains over the last 12 months?',
+    importance: 'medium',
+  },
   {
     id: 'spam-score',
     name: 'Low Spam Score',
@@ -138,22 +138,34 @@ export const ON_PAGE_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' | '
   },
   // High
   {
+    id: 'missing-h1-tag',
+    name: 'Missing H1 Tag',
+    description: 'Are any pages missing a H1 tag?',
+    importance: 'high',
+  },
+  // Medium
+  {
     id: 'url-structure',
     name: 'URL Structure',
     description: 'Is the website\'s URL structure clear, concise and logical?',
-    importance: 'high',
+    importance: 'medium',
   },
   {
     id: 'image-alt-text',
     name: 'Image Alt Text',
     description: 'Do images have optimised alt text attributed to them on a consistent basis across the site?',
-    importance: 'high',
+    importance: 'medium',
   },
-  // Medium
   {
     id: 'meta-descriptions',
     name: 'Optimised Meta Descriptions',
     description: 'Do all key pages have optimised meta descriptions?',
+    importance: 'medium',
+  },
+  {
+    id: 'internal-linking',
+    name: 'Internal Linking',
+    description: 'Are internal links optimised with varying anchor texts to key pages?',
     importance: 'medium',
   },
   // Low
@@ -161,6 +173,12 @@ export const ON_PAGE_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' | '
     id: 'image-file-names',
     name: 'Image File Names',
     description: 'Do images have optimised file names attributed to them on a consistent basis across the site?',
+    importance: 'low',
+  },
+  {
+    id: 'pagination-check',
+    name: 'Pagination Check',
+    description: 'If pagination exists, is it working correctly?',
     importance: 'low',
   },
 ];
@@ -171,6 +189,12 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
     id: 'robots-txt',
     name: 'Robots.txt Valid',
     description: 'Check if robots.txt exists and is valid.',
+    importance: 'critical',
+  },
+  {
+    id: 'robots-txt-blocking',
+    name: 'Robots.txt blocking URLs',
+    description: 'Check to see if any key URLs are blocked from indexing via robots.txt',
     importance: 'critical',
   },
   {
@@ -197,6 +221,12 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
     description: 'Any key pages have a noindex tag attributed on them?',
     importance: 'critical',
   },
+  {
+    id: 'js-dependency',
+    name: 'JavaScript Dependency',
+    description: 'Does critical content load without dependency of JavaScript (e.g. navigation/key HTML)?',
+    importance: 'critical',
+  },
   // High
   {
     id: 'sitemap-errors',
@@ -205,9 +235,9 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
     importance: 'high',
   },
   {
-    id: 'internal-redirects',
-    name: 'Internal Redirects',
-    description: 'Are there internal redirects firing on the website?',
+    id: 'soft-404s',
+    name: 'Soft 404 Errors',
+    description: 'Are there any soft 404 errors firing on the website?',
     importance: 'high',
   },
   {
@@ -217,28 +247,40 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
     importance: 'high',
   },
   {
-    id: 'click-depth',
-    name: 'Click Depth',
+    id: 'internal-redirects',
+    name: 'Internal Redirects',
+    description: 'Are there internal redirects firing on the website?',
+    importance: 'high',
+  },
+  {
+    id: 'crawl-depth',
+    name: 'Crawl Depth',
     description: 'Are any key pages >3 clicks from the homepage?',
     importance: 'high',
   },
   {
-    id: 'js-dependency',
-    name: 'JavaScript Dependency',
-    description: 'Does critical content load without dependency of JavaScript (e.g. navigation/key HTML)?',
+    id: 'mixed-content',
+    name: 'Mixed Content Check',
+    description: 'Ensure that there are no mixed content errors occurring',
     importance: 'high',
   },
   {
     id: 'ai-crawlers-blocked',
     name: 'AI Crawlers Access',
-    description: 'Are AI crawlers blocked in robots.txt? (they should not be)',
+    description: 'Ensure AI crawlers are not blocked in the robots.txt',
     importance: 'high',
   },
   // Medium
   {
-    id: 'self-referencing-canonicals',
-    name: 'Self-Referencing Canonicals',
-    description: 'Do the main URLs have self-referencing canonical tags that we want to rank?',
+    id: 'sitemap-structure',
+    name: 'Sitemap.xml Structure',
+    description: 'Is the sitemap.xml file structured clean and correct with categories?',
+    importance: 'medium',
+  },
+  {
+    id: '5xx-errors',
+    name: '5xx Errors',
+    description: 'Are there any 5xx errors firing on the website?',
     importance: 'medium',
   },
   {
@@ -254,6 +296,30 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
     importance: 'medium',
   },
   {
+    id: 'redirect-chains',
+    name: 'Redirect Chains',
+    description: 'Are there any redirect chains or loops firing on the website?',
+    importance: 'medium',
+  },
+  {
+    id: 'missing-hsts-header',
+    name: 'Missing HSTS Header',
+    description: 'Ensure there is no missing HSTS header',
+    importance: 'medium',
+  },
+  {
+    id: 'self-referencing-canonicals',
+    name: 'Self-Referencing Canonicals',
+    description: 'Do the main URLs have self-referencing canonical tags that we want to rank?',
+    importance: 'medium',
+  },
+  {
+    id: 'canonical-conflicts',
+    name: 'Canonical Conflicts',
+    description: 'Do any URLs canonicalise to a 404/non-indexable URL?',
+    importance: 'medium',
+  },
+  {
     id: 'orphan-pages',
     name: 'Orphan Pages',
     description: 'Any orphan pages on the website?',
@@ -262,7 +328,7 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
   {
     id: 'organisation-schema',
     name: 'Organisation Schema',
-    description: 'Does the website have organisation schema marked up?',
+    description: 'Does the website have organisation schema marked up correctly?',
     importance: 'medium',
   },
   {
@@ -270,6 +336,25 @@ export const TECHNICAL_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
     name: 'Placeholder Text',
     description: 'Is there any lorem ipsum placeholder text on the site?',
     importance: 'medium',
+  },
+  // Low
+  {
+    id: 'sitemap-in-robots',
+    name: 'Sitemap.xml In Robots.txt',
+    description: 'Is the sitemap.xml referenced in the robots.txt file?',
+    importance: 'low',
+  },
+  {
+    id: 'https-consistency',
+    name: 'HTTPS Consistency',
+    description: 'Check the site is being linked/deployed using HTTPS consistently',
+    importance: 'low',
+  },
+  {
+    id: 'www-consistency',
+    name: 'WWW vs Non-WWW',
+    description: 'Check the site is being linked/deployed using WWW/Non-WWW consistency and not both',
+    importance: 'low',
   },
 ];
 
@@ -286,12 +371,6 @@ export const EEAT_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' | 'rec
     id: 'about-page-details',
     name: 'About Page Details',
     description: 'Does the about page include details such as team members, company overview/history and company values?',
-    importance: 'high',
-  },
-  {
-    id: 'author-profile-pages',
-    name: 'Author Profile Pages',
-    description: 'Does the site have author profile landing pages with clear details about the author\'s expertise, including aspects such as an overview, links to social profiles and any blogs that author has written on the site?',
     importance: 'high',
   },
   {
@@ -313,12 +392,30 @@ export const EEAT_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' | 'rec
     importance: 'high',
   },
   {
+    id: 'reviews-banner',
+    name: 'Reviews Banner',
+    description: 'Is there a reviews banner on the homepage/across the site?',
+    importance: 'high',
+  },
+  {
     id: 'privacy-policy',
     name: 'Privacy Policy Page',
     description: 'Is there a privacy policy page on the site?',
     importance: 'high',
   },
+  {
+    id: 'optimised-404-page',
+    name: 'Optimised 404 Page',
+    description: 'Is the 404 page optimised for users to navigate back to key pages on the site?',
+    importance: 'high',
+  },
   // Medium
+  {
+    id: 'author-profile-pages',
+    name: 'Author Profile Pages',
+    description: 'Does the site have author profile landing pages with clear details about the author\'s expertise, including aspects such as an overview, links to social profiles and any blogs that author has written on the site?',
+    importance: 'medium',
+  },
   {
     id: 'person-schema',
     name: 'Person Schema',
@@ -343,17 +440,23 @@ export const EEAT_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' | 'rec
     description: 'Does the website have links to their social media profiles in the footer of the site?',
     importance: 'medium',
   },
-  // Low
   {
     id: 'favicon',
     name: 'Favicon',
     description: 'Is the favicon added to the site correctly and pulling through to the search results?',
-    importance: 'low',
+    importance: 'medium',
   },
   {
-    id: 'optimised-404-page',
-    name: 'Optimised 404 Page',
-    description: 'Is the 404 page optimised for users to navigate back to key pages on the site?',
+    id: 'contact-us-page',
+    name: 'Contact Us Page',
+    description: 'Is there a contact page with all of the key contact information displayed?',
+    importance: 'medium',
+  },
+  // Low
+  {
+    id: 'copyright-date',
+    name: 'Copyright Date',
+    description: 'Is the copyright data in the footer and updated to this year?',
     importance: 'low',
   },
 ];
@@ -386,6 +489,12 @@ export const SOCIAL_SEARCH_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'detail
   },
   // Medium
   {
+    id: 'open-graph-tags',
+    name: 'Open Graph Tags',
+    description: 'Are open graphs tags implemented and optimised correctly?',
+    importance: 'medium',
+  },
+  {
     id: 'pinterest-active',
     name: 'Pinterest Presence',
     description: 'Is the brand active across Pinterest?',
@@ -409,46 +518,46 @@ export const AI_SEARCH_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details' |
   },
   // High
   {
+    id: 'content-freshness',
+    name: 'Content Freshness',
+    description: 'Is content regularly updated with visible last updated dates?',
+    importance: 'high',
+  },
+  // Medium
+  {
     id: 'faq-sections',
     name: 'FAQ Sections',
     description: 'Are FAQ sections with Q&A format present on key pages?',
-    importance: 'high',
+    importance: 'medium',
   },
   {
     id: 'structured-data-coverage',
     name: 'Structured Data Coverage',
     description: 'Is comprehensive schema markup used (FAQ, HowTo, Article, Product, etc.)?',
-    importance: 'high',
-  },
-  {
-    id: 'content-freshness',
-    name: 'Content Freshness',
-    description: 'Is content regularly updated with visible "last updated" dates?',
-    importance: 'high',
+    importance: 'medium',
   },
   {
     id: 'comprehensive-topic-coverage',
     name: 'Comprehensive Topic Coverage',
     description: 'Does content thoroughly cover topics rather than shallow overviews?',
-    importance: 'high',
-  },
-  // Medium
-  {
-    id: 'original-research',
-    name: 'Original Research/Statistics',
-    description: 'Does the site publish original data, studies, or unique insights that AI would cite?',
     importance: 'medium',
   },
   {
-    id: 'entity-recognition',
-    name: 'Entity Recognition',
-    description: 'Is the brand/site recognised as an entity (appears in knowledge panels, Wikipedia, etc.)?',
+    id: 'original-research',
+    name: 'Original Research/Statistics',
+    description: 'Does the site publish original data, studies or unique insights that AI would cite?',
     importance: 'medium',
   },
   {
     id: 'citation-ready-formatting',
     name: 'Citation-Ready Formatting',
-    description: 'Are key facts, definitions, and stats formatted in easily extractable ways?',
+    description: 'Are key facts, definitions and stats formatted in easily extractable ways?',
+    importance: 'medium',
+  },
+  {
+    id: 'entity-recognition',
+    name: 'Entity Recognition',
+    description: 'Is the brand/site recognised as an entity (appears in knowledge panels, Wikipedia etc)?',
     importance: 'medium',
   },
 ];
@@ -471,6 +580,12 @@ export const PERFORMANCE_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details'
     id: 'cls',
     name: 'CLS (Cumulative Layout Shift)',
     description: 'Is CLS under 0.1?',
+    importance: 'critical',
+  },
+  {
+    id: 'uncompressed-html',
+    name: 'Uncompressed HTML',
+    description: 'Is uncompressed HTML size under 2mb?',
     importance: 'critical',
   },
   // High
@@ -508,7 +623,19 @@ export const PERFORMANCE_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'details'
   {
     id: 'render-blocking-resources',
     name: 'Render-Blocking Resources',
-    description: 'Are critical CSS/JS optimised to not block rendering?',
+    description: 'Are critical CSS/JS files optimised to not block rendering?',
+    importance: 'medium',
+  },
+  {
+    id: 'gzip-compression',
+    name: 'Gzip Compresson',
+    description: 'Does the site operate with gzip compression?',
+    importance: 'medium',
+  },
+  {
+    id: 'carbon-footprint',
+    name: 'Carbon Footprint',
+    description: 'The website does not have a carbon rating of \'F\' using the carbon footprint calculator',
     importance: 'medium',
   },
 ];
@@ -546,18 +673,6 @@ export const ECOMMERCE_COLLECTION_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 
   },
   // High
   {
-    id: 'collection-h1-description',
-    name: 'H1 Description',
-    description: 'Do collection pages have a brief description underneath the H1?',
-    importance: 'high',
-  },
-  {
-    id: 'collection-carousel-alt-text',
-    name: 'Carousel Image Alt Text',
-    description: 'Has alt text been added to product images in the product carousel?',
-    importance: 'high',
-  },
-  {
     id: 'collection-cls',
     name: 'Collection Page CLS',
     description: 'Collection pages have no CLS occurring.',
@@ -575,13 +690,25 @@ export const ECOMMERCE_COLLECTION_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 
     description: 'There is a clear CTA for each product in the product carousel.',
     importance: 'high',
   },
+  // Medium
+  {
+    id: 'collection-h1-description',
+    name: 'H1 Description',
+    description: 'Do collection pages have a brief description underneath the H1?',
+    importance: 'medium',
+  },
+  {
+    id: 'collection-carousel-alt-text',
+    name: 'Carousel Image Alt Text',
+    description: 'Has alt text been added to product images in the product carousel?',
+    importance: 'medium',
+  },
   {
     id: 'collection-breadcrumbs',
     name: 'Collection Breadcrumbs',
     description: 'Breadcrumbs are added to collection pages and structurally correct.',
-    importance: 'high',
+    importance: 'medium',
   },
-  // Medium
   {
     id: 'collection-faqs',
     name: 'Collection Page FAQs',
@@ -655,18 +782,18 @@ export const ECOMMERCE_PRODUCT_CHECKS: Omit<AuditCheck, 'passed' | 'score' | 'de
     importance: 'high',
   },
   {
-    id: 'product-image-alt-text',
-    name: 'Product Image Alt Text',
-    description: 'Product images have optimised alt text.',
-    importance: 'high',
-  },
-  {
     id: 'product-image-quality',
     name: 'Product Image Quality',
     description: 'Product images are high quality.',
     importance: 'high',
   },
   // Medium
+  {
+    id: 'product-image-alt-text',
+    name: 'Product Image Alt Text',
+    description: 'Product images have optimised alt text.',
+    importance: 'medium',
+  },
   {
     id: 'product-warranty',
     name: 'Warranty Information',

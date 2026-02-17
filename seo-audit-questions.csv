@@ -1,0 +1,153 @@
+Section,Category Type,Check Name,Description,Importance
+Authority,Base,Domain Rating Growth,Does the site have a clear increase in domain rating over the last 2 years?,Critical
+Authority,Base,Natural Link Profile,Does the site have a natural link profile attributed to it?,Critical
+Authority,Base,High-Authority Backlinks,Does the site have backlinks from at least 10 high-authority domains (DR 50+) in the past 12 months?,Medium
+Authority,Base,Referring Domains Growth,"Does the site have a clear, consistent increase in referring domains over the last 12 months?",Medium
+Authority,Base,Anchor Text Distribution,Is the anchor text profile of the website natural and NOT exact-match heavy?,High
+Authority,Base,Low Spam Score,Does the site have a spam score of 1% or less?,Medium
+On-Page,Base,Optimised Meta Titles,Do all key pages have optimised meta titles?,Critical
+On-Page,Base,Single H1 Tag,Do all pages have x1 H1 tag?,Critical
+On-Page,Base,Missing H1 Tag,Are any pages missing a H1 tag?,High
+On-Page,Base,URL Structure,"Is the website's URL structure clear, concise and logical?",Medium
+On-Page,Base,Image Alt Text,Do images have optimised alt text attributed to them on a consistent basis across the site?,Medium
+On-Page,Base,Image File Names,Do images have optimised file names attributed to them on a consistent basis across the site?,Low
+On-Page,Base,Optimised Meta Descriptions,Do all key pages have optimised meta descriptions?,Medium
+On-Page,Base,Pagination Check,"If pagination exists, is it working correctly?",Low
+On-Page,Base,Internal Linking,Are internal links optimised with varying anchor texts to key pages?,Medium
+Technical,Base,Robots.txt Valid,Check if robots.txt exists and is valid.,Critical
+Technical,Base,Robots.txt blocking URLs,Check to see if any key URLs are blocked from indexing via robots.txt,Critical
+Technical,Base,Sitemap.xml Exists,Does sitemap.xml file exist?,Critical
+Technical,Base,Sitemap.xml In Robots.txt,Is the sitemap.xml referenced in the robots.txt file?,Low
+Technical,Base,Sitemap.xml Structure,Is the sitemap.xml file structured clean and correct with categories?,Medium
+Technical,Base,Sitemap URL Errors,Do URLs in sitemap.xml file return any 404 or 3xx errors?,High
+Technical,Base,Internal 404 Errors,Are there internal 404 errors firing on the website?,Critical
+Technical,Base,Soft 404 Errors,Are there any soft 404 errors firing on the website?,High
+Technical,Base,5xx Errors,Are there any 5xx errors firing on the website?,Medium
+Technical,Base,Missing Meta Titles,Any missing meta titles?,Critical
+Technical,Base,Duplicate Meta Titles,Any duplicate meta titles?,High
+Technical,Base,Duplicate Meta Descriptions,Any duplicate meta descriptions?,Medium
+Technical,Base,Missing Meta Descriptions,Any missing meta descriptions?,Medium
+Technical,Base,Noindex on Key Pages,Any key pages have a noindex tag attributed on them?,Critical
+Technical,Base,Internal Redirects,Are there internal redirects firing on the website?,High
+Technical,Base,Redirect Chains,Are there any redirect chains or loops firing on the website?,Medium
+Technical,Base,Crawl Depth,Are any key pages >3 clicks from the homepage?,High
+Technical,Base,JavaScript Dependency,Does critical content load without dependency of JavaScript (e.g. navigation/key HTML)?,Critical
+Technical,Base,Mixed Content Check,Ensure that there are no mixed content errors occurring,High
+Technical,Base,Missing HSTS Header,Ensure there is no missing HSTS header,Medium
+Technical,Base,AI Crawlers Access,Ensure AI crawlers are not blocked in the robots.txt,High
+Technical,Base,Self-Referencing Canonicals,Do the main URLs have self-referencing canonical tags that we want to rank?,Medium
+Technical,Base,Canonical Conflicts,Do any URLs canonicalise to a 404/non-indexable URL?,Medium
+Technical,Base,Orphan Pages,Any orphan pages on the website?,Medium
+Technical,Base,Organisation Schema,Does the website have organisation schema marked up correctly?,Medium
+Technical,Base,Placeholder Text,Is there any lorem ipsum placeholder text on the site?,Medium
+Technical,Base,HTTPS Consistency,Check the site is being linked/deployed using HTTPS consistently,Low
+Technical,Base,WWW vs Non-WWW,Check the site is being linked/deployed using WWW/Non-WWW consistency and not both,Low
+EEAT,Base,About Page Exists,Is there an about page that exists on the site?,Critical
+EEAT,Base,About Page Details,"Does the about page include details such as team members, company overview/history and company values?",High
+EEAT,Base,Author Profile Pages,"Does the site have author profile landing pages with clear details about the author's expertise, including aspects such as an overview, links to social profiles and any blogs that author has written on the site?",Medium
+EEAT,Base,Author Bios in Content,Are there author bios included in the blog content pages with clickable links to the author landing pages?,High
+EEAT,Base,Date Published/Updated,Is there a date published/updated section on the blog content?,High
+EEAT,Base,Reviews Page,Is there a reviews page on the site?,High
+EEAT,Base,Reviews Banner,Is there a reviews banner on the homepage/across the site?,High
+EEAT,Base,Privacy Policy Page,Is there a privacy policy page on the site?,High
+EEAT,Base,Person Schema,Is person schema added to the author pages with correct information?,Medium
+EEAT,Base,Reviews Rating,"If reviews are integrated on the site, do they have over 4.5 star rating?",Medium
+EEAT,Base,Terms & Conditions Page,Is there a T&Cs page on the site?,Medium
+EEAT,Base,Social Media Links,Does the website have links to their social media profiles in the footer of the site?,Medium
+EEAT,Base,Favicon,Is the favicon added to the site correctly and pulling through to the search results?,Medium
+EEAT,Base,Optimised 404 Page,Is the 404 page optimised for users to navigate back to key pages on the site?,High
+EEAT,Base,Contact Us Page,Is there a contact page with all of the key contact information displayed?,Medium
+EEAT,Base,Copyright Date,Is the copyright data in the footer and updated to this year?,Low
+Social Search,Base,Open Graph Tags,Are open graphs tags implemented and optimised correctly?,Medium
+Social Search,Base,TikTok Presence,Is the brand active across TikTok?,High
+Social Search,Base,YouTube Presence,Is the brand active across YouTube?,High
+Social Search,Base,Instagram Presence,Is the brand active across Instagram?,High
+Social Search,Base,Pinterest Presence,Is the brand active across Pinterest?,Medium
+Social Search,Base,Social Engagement Management,Are social comments and reviews being responded to and managed consistently?,High
+Social Search,Base,Consistent Handles,Are brand handles and usernames consistent across all social search platforms?,Medium
+AI Search,Base,"Clear, Direct Answers","Does content provide concise, direct answers to common questions (not buried in fluff)?",Critical
+AI Search,Base,FAQ Sections,Are FAQ sections with Q&A format present on key pages?,Medium
+AI Search,Base,Structured Data Coverage,"Is comprehensive schema markup used (FAQ, HowTo, Article, Product, etc.)?",Medium
+AI Search,Base,Content Freshness,Is content regularly updated with visible last updated dates?,High
+AI Search,Base,Comprehensive Topic Coverage,Does content thoroughly cover topics rather than shallow overviews?,Medium
+AI Search,Base,Original Research/Statistics,"Does the site publish original data, studies or unique insights that AI would cite?",Medium
+AI Search,Base,Citation-Ready Formatting,"Are key facts, definitions and stats formatted in easily extractable ways?",Medium
+AI Search,Base,Entity Recognition,"Is the brand/site recognised as an entity (appears in knowledge panels, Wikipedia etc)?",Medium
+Performance,Base,LCP (Largest Contentful Paint),Is LCP under 2.5 seconds?,Critical
+Performance,Base,INP (Interaction to Next Paint),Is INP under 200ms?,Critical
+Performance,Base,CLS (Cumulative Layout Shift),Is CLS under 0.1?,Critical
+Performance,Base,Mobile Page Speed Score,Does the site score 75+ on mobile in PageSpeed Insights?,High
+Performance,Base,Desktop Page Speed Score,Does the site score 75+ on desktop in PageSpeed Insights?,High
+Performance,Base,Mobile Responsiveness,Is the site fully responsive and mobile-friendly?,High
+Performance,Base,Uncompressed HTML,Is uncompressed HTML size under 2mb?,Critical
+Performance,Base,TTFB (Time to First Byte),Is server response time under 800ms?,Medium
+Performance,Base,Image Optimisation,Are images compressed and using modern formats (WebP/AVIF)?,Medium
+Performance,Base,Render-Blocking Resources,Are critical CSS/JS files optimised to not block rendering?,Medium
+Performance,Base,Gzip Compresson,Does the site operate with gzip compression?,Medium
+Performance,Base,Carbon Footprint,The website does not have a carbon rating of 'F' using the carbon footprint calculator,Medium
+Collection Pages,Ecommerce,Product Carousels,Do collection pages have product carousels that link to individual product pages?,Critical
+Collection Pages,Ecommerce,Filter Canonicalisation,Is there a filter system that works and canonicalises correctly to the collection URL?,Critical
+Collection Pages,Ecommerce,Optimised Collection H1s,"There are clear, optimised H1s on key collection pages for focus keyword intents.",Critical
+Collection Pages,Ecommerce,Navigation Accessibility,Key collection pages are accessible from navigation/homepage.,Critical
+Collection Pages,Ecommerce,H1 Description,Do collection pages have a brief description underneath the H1?,Medium
+Collection Pages,Ecommerce,Carousel Image Alt Text,Has alt text been added to product images in the product carousel?,Medium
+Collection Pages,Ecommerce,Collection Page CLS,Collection pages have no CLS occurring.,High
+Collection Pages,Ecommerce,Collection URL Structure,There is a clear URL structure in place for collection pages for the CMS it operates on.,High
+Collection Pages,Ecommerce,Product CTAs,There is a clear CTA for each product in the product carousel.,High
+Collection Pages,Ecommerce,Collection Breadcrumbs,Breadcrumbs are added to collection pages and structurally correct.,Medium
+Collection Pages,Ecommerce,Collection Page FAQs,Do collection pages have FAQs added to the bottom with FAQ schema added?,Medium
+Collection Pages,Ecommerce,Reviews Banner/Carousel,There is a reviews banner/carousel integrated on collection pages.,Medium
+Product Pages,Ecommerce,Clear Pricing,Product pages have clear pricing for users to see.,Critical
+Product Pages,Ecommerce,Product Schema,Product schema is added to product pages and validated.,Critical
+Product Pages,Ecommerce,Stock Availability,Product pages show stock availability.,High
+Product Pages,Ecommerce,Review Star Rating,Product review star rating is visible.,High
+Product Pages,Ecommerce,Specs & Features,Product pages have clear specs and features visible and accessible.,High
+Product Pages,Ecommerce,Return & Refund Policy,Product pages have clear return and refund policies information.,High
+Product Pages,Ecommerce,Shipping Information,Product pages have clear shipping information.,High
+Product Pages,Ecommerce,Google Merchant Center Data,Product has the correct Google Merchant Center data.,High
+Product Pages,Ecommerce,Product Page CLS,Product pages have no CLS occurring.,High
+Product Pages,Ecommerce,Product Image Quality,Product images are high quality.,High
+Product Pages,Ecommerce,Product Image Alt Text,Product images have optimised alt text.,Medium
+Product Pages,Ecommerce,Warranty Information,Product pages have clear warranty information on the page.,Medium
+Product Pages,Ecommerce,Customer Support Info,Product pages have clear customer support/contact information displayed.,Medium
+Google Business Profile,Local,GBP Verified & Claimed,A verified GBP exists and has been claimed.,Critical
+Google Business Profile,Local,Business Name Correct,The business name is correct and specific to the location.,Critical
+Google Business Profile,Local,Business Address Correct,The business address is correct and specific to the location.,Critical
+Google Business Profile,Local,Phone Number Correct,The business phone number is correct and specific to the location.,Critical
+Google Business Profile,Local,Website Link Correct,The business website is correct and points to the correct landing page.,Critical
+Google Business Profile,Local,Primary Category Correct,The primary business category is correct.,Critical
+Google Business Profile,Local,Reviews Answered,Reviews are being answered consistently.,Critical
+Google Business Profile,Local,Working Hours Correct,The business working hours are correct and match the landing page.,High
+Google Business Profile,Local,Secondary Categories,Secondary business categories are present and accurate.,High
+Google Business Profile,Local,Complete Description,The profile has a complete description.,High
+Google Business Profile,Local,Logo Uploaded,The logo is uploaded and accurate.,High
+Google Business Profile,Local,Cover Image,The cover image is a wide exterior photo showcasing the location.,High
+Google Business Profile,Local,Interior & Exterior Photos,The profile has interior and exterior photos added.,High
+Google Business Profile,Local,Services with Descriptions,The profile includes services with descriptions (if applicable).,High
+Google Business Profile,Local,Consistent Review Flow,The business has a consistent flow of high-quality reviews.,High
+Google Business Profile,Local,Holiday Hours Added,The business holiday hours have correctly been added.,Medium
+Google Business Profile,Local,Social Profile Links,The profile contains links to all relevant social profiles.,Medium
+Google Business Profile,Local,Service Area Included,The business service area is included (where applicable).,Medium
+Google Business Profile,Local,Team Photo,The profile has a team photo.,Medium
+Google Business Profile,Local,Questions Answered,All questions on the profile have been answered (if applicable).,Medium
+Google Business Profile,Local,Video Asset,The profile has a video asset.,Low
+Landing Pages,Local,Local H1 Optimised,Is the H1 optimised for the local search intent it should be targeting?,Critical
+Landing Pages,Local,Local Metadata Optimised,Is the metadata optimised for the local search intent it should be targeting?,Critical
+Landing Pages,Local,NAP & Opening Hours,"The landing page includes the address, opening hours and contact details for users to see.",Critical
+Landing Pages,Local,LocalBusiness Schema,LocalBusiness schema is added to the landing page.,Critical
+Landing Pages,Local,Store Image,The landing page includes a high-quality image of the store.,High
+Landing Pages,Local,GBP Reviews Integrated,Google Business Profile reviews are integrated onto the page.,High
+Landing Pages,Local,Google Maps Integration,Google Maps is integrated onto the landing page.,High
+Landing Pages,Local,Clear CTAs,Clear CTAs are added for booking appointments/getting directions.,High
+Landing Pages,Local,Image Alt Text,The images on the landing page have optimised alt text added.,Medium
+Landing Pages,Local,Store FAQs,There are FAQs about the store added with FAQ schema attributed.,Medium
+Landing Pages,Local,Store Facilities,The facilities of the store are included.,Medium
+Landing Pages,Local,Team Section,There is a section of the team who runs the store for trust.,Medium
+International,International,Hreflang Implementation,Hreflang has correctly been implemented across the domain.,Critical
+International,International,Unique Content per Region,All of the content is not duplicated/the same across each separate location area of the site.,Critical
+International,International,No Geolocation Redirects,There are no geolocation redirects automatically triggering/set up on the site.,Critical
+International,International,Metadata Differentiation,There is a clear difference in metadata for each country.,High
+International,International,Hreflang XML Sitemap,A clear hreflang XML sitemap exists.,High
+International,International,Subdirectory Structure,The logic of the site does not use subdomains to separate the different country versions (uses subdirectories).,High
+International,International,Language Selector,Users can choose their language clearly on the site from an option/selection widget/CTA.,High
+International,International,Cross-version Crawlability,Crawling and navigating between the different versions of the site is a simple and clear process.,High

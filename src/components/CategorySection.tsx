@@ -16,7 +16,11 @@ interface CategorySectionProps {
   weight: number;
   checks: Check[];
   checkStatuses: Record<string, CheckStatus>;
+  checkNotes: Record<string, string>;
+  checkLinks: Record<string, string>;
   onCheckStatusChange: (checkId: string, status: CheckStatus) => void;
+  onNoteChange: (checkId: string, note: string) => void;
+  onLinkChange: (checkId: string, link: string) => void;
   isExpanded: boolean;
   onToggle: () => void;
   score: number | null;
@@ -29,7 +33,11 @@ export default function CategorySection({
   weight,
   checks,
   checkStatuses,
+  checkNotes,
+  checkLinks,
   onCheckStatusChange,
+  onNoteChange,
+  onLinkChange,
   isExpanded,
   onToggle,
   score,
@@ -111,7 +119,11 @@ export default function CategorySection({
               description={check.description}
               importance={check.importance}
               status={checkStatuses[check.id] || null}
+              note={checkNotes[check.id] || ''}
+              link={checkLinks[check.id] || ''}
               onStatusChange={onCheckStatusChange}
+              onNoteChange={onNoteChange}
+              onLinkChange={onLinkChange}
             />
           ))}
         </div>

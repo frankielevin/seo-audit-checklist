@@ -62,20 +62,20 @@ const INTERNATIONAL_CATEGORIES = [
   { id: 'international', name: 'International', description: 'Hreflang implementation, content differentiation, and multi-region setup', weight: 10, checks: INTERNATIONAL_CHECKS },
 ];
 
-// Function to get categories based on brand type
+// Function to get categories based on brand types (supports multiple)
 // Brand-specific categories come first, then base categories
-function getCategoriesForBrandType(brandType: BrandType) {
-  switch (brandType) {
-    case 'ecommerce':
-      return [...ECOMMERCE_CATEGORIES, ...BASE_CATEGORIES];
-    case 'local':
-      return [...LOCAL_CATEGORIES, ...BASE_CATEGORIES];
-    case 'international':
-      return [...INTERNATIONAL_CATEGORIES, ...BASE_CATEGORIES];
-    case 'general':
-    default:
-      return BASE_CATEGORIES;
+function getCategoriesForBrandTypes(brandTypes: BrandType[]) {
+  const brandSpecific = [];
+  if (brandTypes.includes('ecommerce')) {
+    brandSpecific.push(...ECOMMERCE_CATEGORIES);
   }
+  if (brandTypes.includes('local')) {
+    brandSpecific.push(...LOCAL_CATEGORIES);
+  }
+  if (brandTypes.includes('international')) {
+    brandSpecific.push(...INTERNATIONAL_CATEGORIES);
+  }
+  return [...brandSpecific, ...BASE_CATEGORIES];
 }
 
 export default function AuditPage() {
@@ -98,22 +98,28 @@ function AuditLoadingFallback() {
 function AuditContent() {
   const searchParams = useSearchParams();
   const url = searchParams.get('url') || '';
-  const brandType = (searchParams.get('type') as BrandType) || 'general';
+  const brandTypes = (searchParams.get('type') || 'general').split(',') as BrandType[];
   const [currentStep, setCurrentStep] = useState(0);
   const [checkStatuses, setCheckStatuses] = useState<Record<string, CheckStatus>>({});
+  const [checkNotes, setCheckNotes] = useState<Record<string, string>>({});
+  const [checkLinks, setCheckLinks] = useState<Record<string, string>>({});
+  const [showDetailedResults, setShowDetailedResults] = useState(false);
+  const [detailedGroupBy, setDetailedGroupBy] = useState<'category' | 'priority'>('category');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'fail'>('fail');
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(new Set());
 
   // Get categories based on brand type
-  const CATEGORIES = useMemo(() => getCategoriesForBrandType(brandType), [brandType]);
+  const CATEGORIES = useMemo(() => getCategoriesForBrandTypes(brandTypes), [brandTypes.join(',')]);
 
   const isResultsScreen = currentStep >= CATEGORIES.length;
   const currentCategory = !isResultsScreen ? CATEGORIES[currentStep] : null;
 
   const getChecksByPriority = () => {
     const priorities = {
-      critical: [] as { category: string; name: string; description: string; status: string }[],
-      high: [] as { category: string; name: string; description: string; status: string }[],
-      medium: [] as { category: string; name: string; description: string; status: string }[],
-      low: [] as { category: string; name: string; description: string; status: string }[],
+      critical: [] as { category: string; priority: string; name: string; description: string; status: string; notes: string; link: string }[],
+      high: [] as { category: string; priority: string; name: string; description: string; status: string; notes: string; link: string }[],
+      medium: [] as { category: string; priority: string; name: string; description: string; status: string; notes: string; link: string }[],
+      low: [] as { category: string; priority: string; name: string; description: string; status: string; notes: string; link: string }[],
     };
 
     for (const category of CATEGORIES) {
@@ -122,14 +128,30 @@ function AuditContent() {
         const statusText = status === 'pass' ? 'Pass' : status === 'fail' ? 'Fail' : 'Not Answered';
         priorities[check.importance].push({
           category: category.name,
+          priority: check.importance.charAt(0).toUpperCase() + check.importance.slice(1),
           name: check.name,
           description: check.description,
           status: statusText,
+          notes: checkNotes[check.id] || '',
+          link: checkLinks[check.id] || '',
         });
       }
     }
 
     return priorities;
+  };
+
+  // Helper to make Links/Docs cells clickable hyperlinks in a worksheet
+  const addHyperlinks = (worksheet: XLSX.WorkSheet, dataLength: number, linkColIndex: number) => {
+    const colLetter = String.fromCharCode(65 + linkColIndex); // e.g. 'G' for index 6
+    for (let r = 1; r <= dataLength; r++) {
+      const cellRef = `${colLetter}${r + 1}`; // +1 for header row
+      const cell = worksheet[cellRef];
+      if (cell && cell.v && typeof cell.v === 'string' && cell.v.trim()) {
+        const linkUrl = cell.v.startsWith('http') ? cell.v : `https://${cell.v}`;
+        cell.l = { Target: linkUrl, Tooltip: cell.v };
+      }
+    }
   };
 
   const exportToExcel = () => {
@@ -144,18 +166,24 @@ function AuditContent() {
       const data = priorities[priority];
       if (data.length > 0) {
         const sheetData = [
-          ['Category', 'Check Name', 'Description', 'Status'],
-          ...data.map(row => [row.category, row.name, row.description, row.status]),
+          ['Category', 'Priority', 'Check Name', 'Description', 'Status', 'Notes', 'Links/Docs'],
+          ...data.map(row => [row.category, row.priority, row.name, row.description, row.status, row.notes, row.link]),
         ];
         const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
 
         // Set column widths
         worksheet['!cols'] = [
           { wch: 25 }, // Category
+          { wch: 12 }, // Priority
           { wch: 30 }, // Check Name
           { wch: 60 }, // Description
           { wch: 15 }, // Status
+          { wch: 30 }, // Notes
+          { wch: 30 }, // Links/Docs
         ];
+
+        // Make Links/Docs clickable
+        addHyperlinks(worksheet, data.length, 6);
 
         XLSX.utils.book_append_sheet(workbook, worksheet, priority.charAt(0).toUpperCase() + priority.slice(1));
       }
@@ -169,18 +197,20 @@ function AuditContent() {
     const urlName = url ? url.replace(/https?:\/\//, '').replace(/[^a-zA-Z0-9]/g, '-') : 'audit';
 
     // Create a flat CSV with all checks
-    const rows: string[][] = [['Priority', 'Category', 'Check Name', 'Description', 'Status']];
+    const rows: string[][] = [['Category', 'Priority', 'Check Name', 'Description', 'Status', 'Notes', 'Links/Docs']];
 
     for (const category of CATEGORIES) {
       for (const check of category.checks) {
         const status = checkStatuses[check.id];
         const statusText = status === 'pass' ? 'Pass' : status === 'fail' ? 'Fail' : 'Not Answered';
         rows.push([
-          check.importance.charAt(0).toUpperCase() + check.importance.slice(1),
           category.name,
+          check.importance.charAt(0).toUpperCase() + check.importance.slice(1),
           check.name,
           check.description,
           statusText,
+          checkNotes[check.id] || '',
+          checkLinks[check.id] || '',
         ]);
       }
     }
@@ -197,6 +227,14 @@ function AuditContent() {
 
   const handleCheckStatusChange = (checkId: string, status: CheckStatus) => {
     setCheckStatuses((prev) => ({ ...prev, [checkId]: status }));
+  };
+
+  const handleNoteChange = (checkId: string, note: string) => {
+    setCheckNotes((prev) => ({ ...prev, [checkId]: note }));
+  };
+
+  const handleLinkChange = (checkId: string, link: string) => {
+    setCheckLinks((prev) => ({ ...prev, [checkId]: link }));
   };
 
   const handleNext = () => {
@@ -304,6 +342,650 @@ function AuditContent() {
       const largeArc = endAngle - startAngle > 180 ? 1 : 0;
       return `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
     };
+
+    // Detailed results view - grouped data
+    const importanceBadgeConfig = {
+      critical: { label: 'Critical', color: 'var(--error)', bg: 'var(--error-light)' },
+      high: { label: 'High', color: 'var(--warning)', bg: 'var(--warning-light)' },
+      medium: { label: 'Medium', color: 'var(--primary)', bg: 'var(--primary-light)' },
+      low: { label: 'Low', color: 'var(--success)', bg: 'var(--success-light)' },
+    };
+
+    const priorityIcons: Record<string, string> = {
+      critical: '🔴',
+      high: '🟠',
+      medium: '🔵',
+      low: '🟢',
+    };
+
+    type DetailedCheck = {
+      id: string;
+      name: string;
+      description: string;
+      importance: 'critical' | 'high' | 'medium' | 'low';
+      status: CheckStatus;
+      categoryName: string;
+      note: string;
+      link: string;
+    };
+
+    type DetailedGroup = {
+      key: string;
+      label: string;
+      icon?: string;
+      color?: string;
+      score?: number | null;
+      checks: DetailedCheck[];
+      passCount: number;
+      failCount: number;
+      totalCount: number;
+    };
+
+    const detailedGroups: DetailedGroup[] = (() => {
+      if (detailedGroupBy === 'category') {
+        return CATEGORIES.map(category => {
+          const allChecks = category.checks.map(check => ({
+            ...check,
+            status: checkStatuses[check.id] ?? null,
+            categoryName: category.name,
+            note: checkNotes[check.id] || '',
+            link: checkLinks[check.id] || '',
+          }));
+          const filtered = statusFilter === 'fail'
+            ? allChecks.filter(c => c.status === 'fail')
+            : allChecks;
+          return {
+            key: category.id,
+            label: category.name,
+            icon: categoryIcons[category.id],
+            score: categoryScores[category.id],
+            checks: filtered,
+            passCount: allChecks.filter(c => c.status === 'pass').length,
+            failCount: allChecks.filter(c => c.status === 'fail').length,
+            totalCount: allChecks.length,
+          };
+        }).filter(group => group.checks.length > 0);
+      } else {
+        const PRIORITY_ORDER = ['critical', 'high', 'medium', 'low'] as const;
+        const priorityLabels = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+        const priorityColors = {
+          critical: 'var(--error)',
+          high: 'var(--warning)',
+          medium: 'var(--primary)',
+          low: 'var(--success)',
+        };
+        return PRIORITY_ORDER.map(priority => {
+          const allChecks = CATEGORIES.flatMap(category =>
+            category.checks
+              .filter(check => check.importance === priority)
+              .map(check => ({
+                ...check,
+                status: checkStatuses[check.id] ?? null,
+                categoryName: category.name,
+                note: checkNotes[check.id] || '',
+                link: checkLinks[check.id] || '',
+              }))
+          );
+          const filtered = statusFilter === 'fail'
+            ? allChecks.filter(c => c.status === 'fail')
+            : allChecks;
+          return {
+            key: priority,
+            label: priorityLabels[priority],
+            icon: priorityIcons[priority],
+            color: priorityColors[priority],
+            checks: filtered,
+            passCount: allChecks.filter(c => c.status === 'pass').length,
+            failCount: allChecks.filter(c => c.status === 'fail').length,
+            totalCount: allChecks.length,
+          };
+        }).filter(group => group.checks.length > 0);
+      }
+    })();
+
+    const renderCheckRow = (check: DetailedCheck, showCategory: boolean) => {
+      const badge = importanceBadgeConfig[check.importance];
+      const isFail = check.status === 'fail';
+      const isPass = check.status === 'pass';
+
+      return (
+        <div
+          key={check.id}
+          style={{
+            padding: '0.875rem 1.25rem 0.875rem 1.5rem',
+            borderBottom: '1px solid var(--border)',
+            backgroundColor: isFail ? 'var(--error-light)' : 'var(--card-bg)',
+            borderLeft: `3px solid ${isFail ? 'var(--error)' : isPass ? 'var(--success)' : 'transparent'}`,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+          }}
+        >
+          <div
+            style={{
+              width: '22px',
+              height: '22px',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              backgroundColor: isFail ? 'var(--error)' : isPass ? 'var(--success)' : 'var(--border)',
+              color: (isFail || isPass) ? 'white' : 'var(--muted)',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              marginTop: '0.125rem',
+            }}
+          >
+            {isFail ? '✗' : isPass ? '✓' : '—'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{check.name}</span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  padding: '0.125rem 0.4rem',
+                  borderRadius: '100px',
+                  backgroundColor: badge.bg,
+                  color: badge.color,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.025em',
+                }}
+              >
+                {badge.label}
+              </span>
+              {showCategory && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontStyle: 'italic' }}>
+                  {check.categoryName}
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+              {check.description}
+            </p>
+            {(check.note || check.link) && (
+              <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {check.note && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.375rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em', flexShrink: 0, marginTop: '0.1rem' }}>Note:</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--foreground)', lineHeight: 1.4 }}>{check.note}</span>
+                  </div>
+                )}
+                {check.link && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em', flexShrink: 0 }}>Link:</span>
+                    <a
+                      href={check.link.startsWith('http') ? check.link : `https://${check.link}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                    >
+                      {check.link}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div
+            style={{
+              flexShrink: 0,
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              padding: '0.25rem 0.6rem',
+              borderRadius: '100px',
+              backgroundColor: isFail ? 'var(--error)' : isPass ? 'var(--success)' : 'var(--border)',
+              color: (isFail || isPass) ? 'white' : 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.025em',
+            }}
+          >
+            {isFail ? 'Fail' : isPass ? 'Pass' : 'N/A'}
+          </div>
+        </div>
+      );
+    };
+
+    const toggleGroup = (key: string) => {
+      setClosedGroups(prev => {
+        const next = new Set(prev);
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
+        }
+        return next;
+      });
+    };
+
+    const handleGroupByChange = (mode: 'category' | 'priority') => {
+      setDetailedGroupBy(mode);
+      setClosedGroups(new Set());
+    };
+
+    const exportFailedToExcel = () => {
+      const workbook = XLSX.utils.book_new();
+      const urlName = url ? url.replace(/https?:\/\//, '').replace(/[^a-zA-Z0-9]/g, '-') : 'audit';
+      const priorityOrder: ('critical' | 'high' | 'medium' | 'low')[] = ['critical', 'high', 'medium', 'low'];
+
+      for (const priority of priorityOrder) {
+        const data: string[][] = [];
+        for (const category of CATEGORIES) {
+          for (const check of category.checks) {
+            if (check.importance === priority && checkStatuses[check.id] === 'fail') {
+              data.push([category.name, priority.charAt(0).toUpperCase() + priority.slice(1), check.name, check.description, 'Fail', checkNotes[check.id] || '', checkLinks[check.id] || '']);
+            }
+          }
+        }
+        if (data.length > 0) {
+          const sheetData = [['Category', 'Priority', 'Check Name', 'Description', 'Status', 'Notes', 'Links/Docs'], ...data];
+          const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+          worksheet['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 30 }, { wch: 60 }, { wch: 15 }, { wch: 30 }, { wch: 30 }];
+          addHyperlinks(worksheet, data.length, 6);
+          XLSX.utils.book_append_sheet(workbook, worksheet, priority.charAt(0).toUpperCase() + priority.slice(1));
+        }
+      }
+      XLSX.writeFile(workbook, `seo-audit-failed-${urlName}-${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
+    const exportFailedToCSV = () => {
+      const urlName = url ? url.replace(/https?:\/\//, '').replace(/[^a-zA-Z0-9]/g, '-') : 'audit';
+      const rows: string[][] = [['Category', 'Priority', 'Check Name', 'Description', 'Status', 'Notes', 'Links/Docs']];
+      for (const category of CATEGORIES) {
+        for (const check of category.checks) {
+          if (checkStatuses[check.id] === 'fail') {
+            rows.push([
+              category.name,
+              check.importance.charAt(0).toUpperCase() + check.importance.slice(1),
+              check.name,
+              check.description,
+              'Fail',
+              checkNotes[check.id] || '',
+              checkLinks[check.id] || '',
+            ]);
+          }
+        }
+      }
+      const csvContent = rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `seo-audit-failed-${urlName}-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    };
+
+    // Detailed results view
+    if (showDetailedResults) {
+      return (
+        <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+          {/* Sticky Header */}
+          <div
+            style={{
+              position: 'sticky',
+              top: 0,
+              backgroundColor: 'var(--background)',
+              paddingBottom: '1rem',
+              marginBottom: '1.5rem',
+              zIndex: 10,
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <button
+                onClick={() => setShowDetailedResults(false)}
+                style={{
+                  color: 'var(--muted)',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--foreground)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--muted)'; }}
+              >
+                ← Back to Results
+              </button>
+              <a
+                href={url.startsWith('http') ? url : `https://${url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--primary)', fontSize: '0.8rem', textDecoration: 'none' }}
+              >
+                {url}
+              </a>
+            </div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Detailed Results</h1>
+          </div>
+
+          {/* Summary Strip */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '1.5rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            {[
+              { label: 'Passed', value: passedChecks, color: 'var(--success)', bg: 'var(--success-light)' },
+              { label: 'Failed', value: failedChecks, color: 'var(--error)', bg: 'var(--error-light)' },
+              { label: 'Total Answered', value: totalAnswered, color: 'var(--foreground)', bg: 'var(--background-secondary)' },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                style={{
+                  flex: 1,
+                  minWidth: '120px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: stat.bg,
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: stat.color }}>{stat.value}</span>
+                <span style={{ fontSize: '0.8rem', color: stat.color, fontWeight: 500 }}>{stat.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Controls Bar */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '1.5rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* Group By toggle */}
+            <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+              {(['category', 'priority'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => handleGroupByChange(mode)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: detailedGroupBy === mode ? 'var(--primary)' : 'var(--card-bg)',
+                    color: detailedGroupBy === mode ? 'white' : 'var(--muted)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  By {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Status filter toggle */}
+            <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+              {([
+                { key: 'all' as const, label: 'All Checks' },
+                { key: 'fail' as const, label: 'Failed Only' },
+              ]).map((filter) => (
+                <button
+                  key={filter.key}
+                  onClick={() => setStatusFilter(filter.key)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: statusFilter === filter.key
+                      ? (filter.key === 'fail' ? 'var(--error)' : 'var(--primary)')
+                      : 'var(--card-bg)',
+                    color: statusFilter === filter.key ? 'white' : 'var(--muted)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Check Groups */}
+          {detailedGroups.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '3rem 2rem',
+                backgroundColor: 'var(--card-bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>
+                {statusFilter === 'fail' ? '🎉' : '📋'}
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                {statusFilter === 'fail' ? 'No failed checks!' : 'No checks to display'}
+              </h3>
+              <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>
+                {statusFilter === 'fail'
+                  ? 'All your answered checks passed. Great work!'
+                  : 'Try adjusting the filters above.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {detailedGroups.map((group) => {
+                const isOpen = !closedGroups.has(group.key);
+                const scoreRating = group.score != null ? getScoreRating(group.score) : null;
+
+                return (
+                  <div
+                    key={group.key}
+                    style={{
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      overflow: 'hidden',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    {/* Group Header */}
+                    <div
+                      onClick={() => toggleGroup(group.key)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        padding: '1rem 1.25rem',
+                        cursor: 'pointer',
+                        backgroundColor: 'var(--background-secondary)',
+                        borderBottom: isOpen ? '1px solid var(--border)' : 'none',
+                        transition: 'background-color 0.15s ease',
+                        userSelect: 'none',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg-hover)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--background-secondary)'; }}
+                    >
+                      {/* Icon */}
+                      {group.icon && (
+                        <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>
+                          {group.icon}
+                        </span>
+                      )}
+
+                      {/* Label */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{group.label}</span>
+                          {group.failCount > 0 && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                padding: '0.125rem 0.45rem',
+                                borderRadius: '100px',
+                                backgroundColor: 'var(--error)',
+                                color: 'white',
+                              }}
+                            >
+                              {group.failCount} failed
+                            </span>
+                          )}
+                          {scoreRating && group.score != null && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                padding: '0.125rem 0.45rem',
+                                borderRadius: '100px',
+                                backgroundColor: scoreRating.bgColor,
+                                color: scoreRating.color,
+                              }}
+                            >
+                              {group.score}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Counts */}
+                      <span style={{ fontSize: '0.8rem', color: 'var(--muted)', flexShrink: 0 }}>
+                        {group.passCount}/{group.totalCount} passed
+                      </span>
+
+                      {/* Chevron */}
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--muted)',
+                          flexShrink: 0,
+                          transition: 'transform 0.2s ease',
+                          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      >
+                        ▼
+                      </span>
+                    </div>
+
+                    {/* Group Body */}
+                    {isOpen && (
+                      <div>
+                        {group.checks.map((check) =>
+                          renderCheckRow(check, detailedGroupBy === 'priority')
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Export Failed Checks */}
+          {failedChecks > 0 && (
+            <>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginTop: '2rem', marginBottom: '1rem' }}>
+                Export Failed Checks
+              </h2>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                <button
+                  onClick={exportFailedToExcel}
+                  style={{
+                    flex: 1,
+                    padding: '0.875rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    backgroundColor: 'var(--success)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  Export for Excel / Google Sheets
+                </button>
+                <button
+                  onClick={exportFailedToCSV}
+                  style={{
+                    flex: 1,
+                    padding: '0.875rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    backgroundColor: 'var(--primary)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  Export as CSV
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Bottom Actions */}
+          <div style={{ display: 'flex', gap: '1rem', marginTop: failedChecks > 0 ? '0' : '2rem' }}>
+            <button
+              onClick={() => setShowDetailedResults(false)}
+              style={{
+                flex: 1,
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 600,
+                backgroundColor: 'var(--card-bg)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+            >
+              ← Back to Results
+            </button>
+            <a
+              href="/"
+              style={{
+                flex: 1,
+                padding: '1rem',
+                fontSize: '1rem',
+                fontWeight: 600,
+                backgroundColor: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius)',
+                cursor: 'pointer',
+                textAlign: 'center',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; }}
+            >
+              Start New Audit
+            </a>
+          </div>
+        </main>
+      );
+    }
 
     return (
       <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
@@ -484,21 +1166,9 @@ function AuditContent() {
                   borderRadius: 'var(--radius)',
                 }}
               >
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--background-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.25rem',
-                    flexShrink: 0,
-                  }}
-                >
+                <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>
                   {categoryIcons[category.id]}
-                </div>
+                </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, marginBottom: '0.375rem' }}>{category.name}</div>
                   {/* Progress bar */}
@@ -692,6 +1362,45 @@ function AuditContent() {
           </button>
         </div>
 
+        {/* View Detailed Results Button */}
+        <button
+          onClick={() => {
+            setShowDetailedResults(true);
+            setClosedGroups(new Set());
+            setStatusFilter('fail');
+            setDetailedGroupBy('category');
+          }}
+          style={{
+            width: '100%',
+            padding: '1rem',
+            fontSize: '1rem',
+            fontWeight: 600,
+            backgroundColor: 'var(--card-bg)',
+            color: 'var(--primary)',
+            border: '2px solid var(--primary)',
+            borderRadius: 'var(--radius)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s ease',
+            marginBottom: '2rem',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--primary)';
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--card-bg)';
+            e.currentTarget.style.color = 'var(--primary)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <span>View Detailed Results</span>
+        </button>
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button
@@ -820,20 +1529,9 @@ function AuditContent() {
       {/* Category Header */}
       <div style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: 'var(--radius)',
-              backgroundColor: 'var(--primary-light)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.75rem',
-            }}
-          >
+          <span style={{ fontSize: '2rem' }}>
             {categoryIcons[currentCategory!.id]}
-          </div>
+          </span>
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
               {currentCategory!.name}
@@ -899,7 +1597,11 @@ function AuditContent() {
             description={check.description}
             importance={check.importance}
             status={checkStatuses[check.id] || null}
+            note={checkNotes[check.id] || ''}
+            link={checkLinks[check.id] || ''}
             onStatusChange={handleCheckStatusChange}
+            onNoteChange={handleNoteChange}
+            onLinkChange={handleLinkChange}
           />
         ))}
       </div>

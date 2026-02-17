@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 export type CheckStatus = 'pass' | 'fail' | null;
 
 interface CheckItemProps {
@@ -8,7 +10,11 @@ interface CheckItemProps {
   description: string;
   importance: 'critical' | 'high' | 'medium' | 'low';
   status: CheckStatus;
+  note: string;
+  link: string;
   onStatusChange: (id: string, status: CheckStatus) => void;
+  onNoteChange: (id: string, note: string) => void;
+  onLinkChange: (id: string, link: string) => void;
 }
 
 const importanceConfig = {
@@ -24,9 +30,16 @@ export default function CheckItem({
   description,
   importance,
   status,
+  note,
+  link,
   onStatusChange,
+  onNoteChange,
+  onLinkChange,
 }: CheckItemProps) {
   const config = importanceConfig[importance];
+  const [expanded, setExpanded] = useState(false);
+  const hasAnnotations = note.length > 0 || link.length > 0;
+  const showFields = status !== null && (expanded || hasAnnotations);
 
   return (
     <div
@@ -95,7 +108,43 @@ export default function CheckItem({
         </div>
 
         {/* Right side - Action buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, alignItems: 'center' }}>
+          {/* Add notes/link toggle */}
+          {status !== null && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              title={expanded ? 'Hide notes & links' : 'Add notes & links'}
+              style={{
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.9rem',
+                border: `1.5px solid ${hasAnnotations ? 'var(--primary)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius-sm)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                backgroundColor: hasAnnotations ? 'var(--primary-light)' : 'var(--card-bg)',
+                color: hasAnnotations ? 'var(--primary)' : 'var(--muted)',
+                padding: 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!hasAnnotations) {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!hasAnnotations) {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--muted)';
+                }
+              }}
+            >
+              {hasAnnotations ? '📝' : '＋'}
+            </button>
+          )}
           <button
             onClick={() => onStatusChange(id, status === 'pass' ? null : 'pass')}
             style={{
@@ -152,6 +201,125 @@ export default function CheckItem({
           </button>
         </div>
       </div>
+
+      {/* Expandable notes & links section */}
+      {showFields && (
+        <div
+          style={{
+            marginTop: '0.875rem',
+            paddingTop: '0.875rem',
+            borderTop: '1px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.625rem',
+          }}
+        >
+          {/* Notes */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'var(--muted)',
+                marginBottom: '0.3rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Notes
+            </label>
+            <textarea
+              value={note}
+              onChange={(e) => onNoteChange(id, e.target.value)}
+              placeholder="Add any notes or observations..."
+              rows={2}
+              style={{
+                width: '100%',
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.85rem',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--card-bg)',
+                color: 'var(--foreground)',
+                resize: 'vertical',
+                fontFamily: 'inherit',
+                lineHeight: 1.5,
+                outline: 'none',
+                transition: 'border-color 0.15s ease',
+                boxSizing: 'border-box',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+            />
+          </div>
+
+          {/* Links/Docs */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: 'var(--muted)',
+                marginBottom: '0.3rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Links / Docs
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                type="url"
+                value={link}
+                onChange={(e) => onLinkChange(id, e.target.value)}
+                placeholder="https://docs.google.com/... or any URL"
+                style={{
+                  flex: 1,
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.85rem',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--foreground)',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  transition: 'border-color 0.15s ease',
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+              />
+              {link && (
+                <a
+                  href={link.startsWith('http') ? link : `https://${link}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open link"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                    fontSize: '0.85rem',
+                    textDecoration: 'none',
+                    flexShrink: 0,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary-light)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                >
+                  ↗
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
