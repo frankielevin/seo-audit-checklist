@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import CheckItem, { CheckStatus } from '@/components/CheckItem';
 import { calculateCategoryScore, calculateOverallScore, getScoreRating } from '@/lib/scoring';
 import {
@@ -107,6 +109,9 @@ function AuditContent() {
   const [detailedGroupBy, setDetailedGroupBy] = useState<'category' | 'priority'>('category');
   const [statusFilter, setStatusFilter] = useState<'all' | 'fail'>('fail');
   const [closedGroups, setClosedGroups] = useState<Set<string>>(new Set());
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const reportSummaryRef = useRef<HTMLDivElement>(null);
+  const reportDetailedRef = useRef<HTMLDivElement>(null);
 
   // Get categories based on brand type
   const CATEGORIES = useMemo(() => getCategoriesForBrandTypes(brandTypes), [brandTypes.join(',')]);
@@ -235,6 +240,99 @@ function AuditContent() {
 
   const handleLinkChange = (checkId: string, link: string) => {
     setCheckLinks((prev) => ({ ...prev, [checkId]: link }));
+  };
+
+  const downloadReport = async () => {
+    if (!reportSummaryRef.current || !reportDetailedRef.current) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      const urlName = url ? url.replace(/https?:\/\//, '').replace(/[^a-zA-Z0-9]/g, '-') : 'audit';
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      const contentWidth = pageWidth - margin * 2;
+      const gap = 4; // mm gap between blocks
+
+      // Header
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('SEO Audit Report', margin, 20);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100);
+      pdf.text(url, margin, 28);
+      pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, margin, 34);
+      pdf.setTextColor(0);
+
+      let currentY = 42;
+
+      // Helper: capture a single element and add it to the PDF as a whole block
+      // If it won't fit on the current page, start a new page first
+      const addBlockToPdf = async (element: HTMLElement) => {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const aspect = canvas.height / canvas.width;
+        const imgHeight = contentWidth * aspect;
+
+        const availableHeight = pageHeight - currentY - margin;
+
+        // If block doesn't fit and we're not at the top of a page, start a new page
+        if (imgHeight > availableHeight && currentY > margin + 10) {
+          pdf.addPage();
+          currentY = margin;
+        }
+
+        // If the block is taller than an entire page, we must scale it down to fit
+        const maxPageHeight = pageHeight - margin * 2;
+        if (imgHeight > maxPageHeight) {
+          const scaleFactor = maxPageHeight / imgHeight;
+          const scaledWidth = contentWidth * scaleFactor;
+          const scaledHeight = maxPageHeight;
+          const xOffset = margin + (contentWidth - scaledWidth) / 2;
+          pdf.addImage(imgData, 'PNG', xOffset, currentY, scaledWidth, scaledHeight);
+          currentY += scaledHeight + gap;
+        } else {
+          pdf.addImage(imgData, 'PNG', margin, currentY, contentWidth, imgHeight);
+          currentY += imgHeight + gap;
+        }
+      };
+
+      // Capture each direct child of the summary section as a separate block
+      const summaryChildren = Array.from(reportSummaryRef.current.children) as HTMLElement[];
+      for (const child of summaryChildren) {
+        await addBlockToPdf(child);
+      }
+
+      // Add detailed section header
+      const headerAvailable = pageHeight - currentY - margin;
+      if (headerAvailable < 20) {
+        pdf.addPage();
+        currentY = margin;
+      }
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Detailed Results — Failed Checks', margin, currentY + 5);
+      currentY += 12;
+
+      // Capture each direct child of the detailed section as a separate block
+      const detailedChildren = Array.from(reportDetailedRef.current.children) as HTMLElement[];
+      for (const child of detailedChildren) {
+        await addBlockToPdf(child);
+      }
+
+      pdf.save(`seo-audit-report-${urlName}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const handleNext = () => {
@@ -1031,6 +1129,8 @@ function AuditContent() {
           </a>
         </div>
 
+        {/* Report Summary - captured for PDF */}
+        <div ref={reportSummaryRef} style={{ backgroundColor: 'var(--background)' }}>
         {/* Score Card */}
         <div
           style={{
@@ -1145,6 +1245,7 @@ function AuditContent() {
         </div>
 
         {/* Category Breakdown */}
+        <div>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>
           Category Breakdown
         </h2>
@@ -1203,7 +1304,10 @@ function AuditContent() {
           })}
         </div>
 
+        </div>{/* End Category Breakdown wrapper */}
+
         {/* Issue Distribution by Priority */}
+        <div>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>
           Issue Distribution by Priority
         </h2>
@@ -1296,6 +1400,46 @@ function AuditContent() {
             </div>
           )}
         </div>
+        </div>{/* End Issue Distribution wrapper */}
+
+        </div>{/* End reportSummaryRef */}
+
+        {/* Download Report Button */}
+        <button
+          onClick={downloadReport}
+          disabled={isGeneratingPdf}
+          style={{
+            width: '100%',
+            padding: '1rem',
+            fontSize: '1rem',
+            fontWeight: 600,
+            backgroundColor: isGeneratingPdf ? 'var(--border)' : 'var(--foreground)',
+            color: isGeneratingPdf ? 'var(--muted)' : 'var(--background)',
+            border: 'none',
+            borderRadius: 'var(--radius)',
+            cursor: isGeneratingPdf ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s ease',
+            marginBottom: '2rem',
+          }}
+          onMouseEnter={(e) => {
+            if (!isGeneratingPdf) {
+              e.currentTarget.style.opacity = '0.9';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isGeneratingPdf) {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }
+          }}
+        >
+          {isGeneratingPdf ? 'Generating PDF...' : 'Download Report (PDF)'}
+        </button>
 
         {/* Export Buttons */}
         <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>
@@ -1451,6 +1595,112 @@ function AuditContent() {
           >
             Start New Audit
           </a>
+        </div>
+
+        {/* Hidden container for PDF detailed checks capture */}
+        <div
+          ref={reportDetailedRef}
+          style={{
+            position: 'absolute',
+            left: '-9999px',
+            top: 0,
+            width: '760px',
+            backgroundColor: '#ffffff',
+            color: '#000000',
+            padding: '1rem',
+          }}
+        >
+          {CATEGORIES.map(category => {
+            const failedChecks = category.checks.filter(c => checkStatuses[c.id] === 'fail');
+            if (failedChecks.length === 0) return null;
+            return (
+              <div key={category.id} style={{ marginBottom: '1.5rem' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '8px',
+                  marginBottom: '0.5rem',
+                }}>
+                  <span style={{ fontSize: '1.1rem' }}>{categoryIcons[category.id]}</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{category.name}</span>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    padding: '0.125rem 0.45rem',
+                    borderRadius: '100px',
+                    backgroundColor: '#fee2e2',
+                    color: '#dc2626',
+                  }}>
+                    {failedChecks.length} failed
+                  </span>
+                </div>
+                {failedChecks.map(check => {
+                  const impConfig: Record<string, { label: string; color: string; bg: string }> = {
+                    critical: { label: 'Critical', color: '#dc2626', bg: '#fee2e2' },
+                    high: { label: 'High', color: '#d97706', bg: '#fef3c7' },
+                    medium: { label: 'Medium', color: '#2563eb', bg: '#dbeafe' },
+                    low: { label: 'Low', color: '#16a34a', bg: '#dcfce7' },
+                  };
+                  const imp = impConfig[check.importance];
+                  return (
+                    <div key={check.id} style={{
+                      padding: '0.625rem 1rem 0.625rem 1.25rem',
+                      borderBottom: '1px solid #e5e7eb',
+                      backgroundColor: '#fef2f2',
+                      borderLeft: '3px solid #dc2626',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.5rem',
+                    }}>
+                      <div style={{
+                        width: '18px', height: '18px', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: '50%', backgroundColor: '#dc2626',
+                        color: 'white', fontWeight: 700, fontSize: '0.65rem', marginTop: '0.1rem',
+                      }}>✗</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{check.name}</span>
+                          <span style={{
+                            fontSize: '0.6rem', fontWeight: 600, padding: '0.1rem 0.35rem',
+                            borderRadius: '100px', backgroundColor: imp.bg, color: imp.color,
+                            textTransform: 'uppercase', letterSpacing: '0.025em',
+                          }}>{imp.label}</span>
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0, lineHeight: 1.4 }}>
+                          {check.description}
+                        </p>
+                        {(checkNotes[check.id] || checkLinks[check.id]) && (
+                          <div style={{ marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                            {checkNotes[check.id] && (
+                              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                <span style={{ fontSize: '0.65rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', flexShrink: 0 }}>Note:</span>
+                                <span style={{ fontSize: '0.75rem', color: '#374151', lineHeight: 1.3 }}>{checkNotes[check.id]}</span>
+                              </div>
+                            )}
+                            {checkLinks[check.id] && (
+                              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                <span style={{ fontSize: '0.65rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', flexShrink: 0 }}>Link:</span>
+                                <span style={{ fontSize: '0.75rem', color: '#2563eb' }}>{checkLinks[check.id]}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{
+                        flexShrink: 0, fontSize: '0.65rem', fontWeight: 700, padding: '0.2rem 0.5rem',
+                        borderRadius: '100px', backgroundColor: '#dc2626', color: 'white',
+                        textTransform: 'uppercase', letterSpacing: '0.025em',
+                      }}>Fail</div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </main>
     );
